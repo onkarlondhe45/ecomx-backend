@@ -20,7 +20,7 @@ public class UserResponseDto {
 	private String username;
 	private String email;
 	private List<AddressResponseDto> address;
-	private List<Roles> role;
+	private Roles role;
 	private LocalDate createdAt;
 	private LocalDate updatedAt;
 }

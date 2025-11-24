@@ -44,9 +44,8 @@ public class User {
 	@Builder.Default
 	private List<Address> address = new ArrayList<>();
 
-	@ElementCollection
 	@Enumerated(EnumType.STRING)
-	private List<Roles> role;
+	private Roles role;
 
 	@CreationTimestamp
 	private LocalDate createdAt;

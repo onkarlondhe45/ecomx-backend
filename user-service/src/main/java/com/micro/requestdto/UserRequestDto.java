@@ -21,7 +21,7 @@ public class UserRequestDto {
 	private String email;
 	private String password;
 	private List<AddressRequestDto> address;
-	private List<Roles> role;
+	private Roles role;
 	private LocalDate createdAt;
 	private LocalDate updatedAt;
 }
