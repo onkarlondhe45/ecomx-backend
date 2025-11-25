@@ -6,12 +6,11 @@ import java.util.stream.Collectors;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.micro.enums.Roles;
+import com.micro.events.UserEventProducer;
 import com.micro.globalexception.UserNotFoundException;
 import com.micro.model.Address;
 import com.micro.model.User;
@@ -31,9 +30,7 @@ public class UserServiceImp implements UserService {
 
 	private final PasswordEncoder passwordEncoder;
 
-	private final KafkaTemplate<String, String> kafkaTemplate;
-
-	private final ObjectMapper objectMapper;
+	private final UserEventProducer userEventProducer;
 
 	@Override
 	public UserResponseDto createUser(UserRequestDto userRequestDto) {
@@ -50,17 +47,8 @@ public class UserServiceImp implements UserService {
 		user.setAddress(addresses);
 		User saveUser = repository.save(user);
 
-//		String eventId = UUID.randomUUID().toString();
+		userEventProducer.userRegisteredEvent(saveUser);
 
-//		NotificationEvent event = NotificationEvent.builder().eventId(eventId).email(user.getEmail())
-//				.subject("Welcome " + user.getUsername()).message("Your registration is successful!")
-//				.timestamp(LocalDateTime.now()).build();
-//
-//		try {
-//			kafkaTemplate.send("notification-topic", eventId, objectMapper.writeValueAsString(event));
-//		} catch (JsonProcessingException e) {
-//			e.printStackTrace();
-//		}
 		return entityToDto(saveUser);
 	}
 

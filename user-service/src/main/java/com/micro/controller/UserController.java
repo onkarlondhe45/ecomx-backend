@@ -1,9 +1,11 @@
 package com.micro.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -49,9 +51,22 @@ public class UserController {
 
 		Roles role = Roles.valueOf(authority.replace("ROLE_", ""));
 		String token = jwtService.generateToken(user.getUsername(), role.name());
+		String refreshToken = jwtService.generateRefreshToken(user.getUsername());
 
-		LoginResponse response = LoginResponse.builder().username(user.getUsername()).roles(role).token(token).build();
+		LoginResponse response = LoginResponse.builder().username(user.getUsername()).roles(role).token(token)
+				.refreshToken(refreshToken).build();
 		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
+
+	@PostMapping("/refresh")
+	public ResponseEntity<Map<String, String>> refreshToken(@RequestBody Map<String, String> request) {
+		String refreshToken = request.get("refreshToken");
+		try {
+			String newAccessToken = jwtService.refreshAccessToken(refreshToken);
+			return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
+		}
 	}
 
 	@PostMapping("/create")
@@ -65,6 +80,7 @@ public class UserController {
 	}
 
 	@GetMapping("/userId/{id}")
+	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<UserResponseDto> getUserById(@PathVariable("id") long id) {
 		UserResponseDto user = userService.getById(id);
 		if (user != null) {
@@ -75,6 +91,7 @@ public class UserController {
 	}
 
 	@GetMapping("/all")
+	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<List<UserResponseDto>> getAllUser() {
 		List<UserResponseDto> userList = userService.getAll();
 		if (userList != null) {
@@ -85,6 +102,7 @@ public class UserController {
 	}
 
 	@PutMapping("/userId/{id}")
+	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<UserResponseDto> updateUserById(@PathVariable("id") long id,
 			@RequestBody UserRequestDto userRequestDto) {
 		UserResponseDto updateUser = userService.updateUser(id, userRequestDto);
@@ -97,6 +115,7 @@ public class UserController {
 	}
 
 	@DeleteMapping("/userId/{id}")
+	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<String> deleteUser(@PathVariable("id") long id) {
 		userService.deleteUser(id);
 		return new ResponseEntity<>("user with user id " + id + " deleted successfully...!", HttpStatus.NO_CONTENT);

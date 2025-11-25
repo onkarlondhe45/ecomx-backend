@@ -10,7 +10,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.micro.enums.Roles;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

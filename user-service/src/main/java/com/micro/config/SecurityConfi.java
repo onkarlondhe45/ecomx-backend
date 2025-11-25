@@ -25,7 +25,7 @@ public class SecurityConfi {
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 		http.csrf(c -> c.disable())
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/users/login", "/api/users/create").permitAll()
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/users/login", "/api/users/create", "/api/users/refresh").permitAll()
 						.requestMatchers("/admin/**").hasRole("ADMIN").requestMatchers("/api/users/**")
 						.hasAnyRole("ADMIN", "USER").anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

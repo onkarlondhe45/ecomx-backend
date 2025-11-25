@@ -9,6 +9,8 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.micro.repository.UserRepository;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -19,11 +21,16 @@ public class JwtService {
 
 	private final SecretKey key;
 	private final long expiration;
+	private final long refreshTokenExpiration;
+	private final UserRepository userRepository;
 
-	public JwtService(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration}") long expiration) {
+	public JwtService(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration}") long expiration,
+			@Value("${jwt.refresh.expiration}") long refreshTokenExpiration, UserRepository userRepository) {
 //		this.key = Keys.hmacShaKeyFor(secret.getBytes());
 		this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)); // Add UTF-8 encoding
 		this.expiration = expiration;
+		this.refreshTokenExpiration = refreshTokenExpiration;
+		this.userRepository = userRepository;
 	}
 
 	public String generateToken(String username, String role) {
@@ -32,6 +39,20 @@ public class JwtService {
 
 		return Jwts.builder().subject(username).claims(Map.of("role", role)).issuedAt(now).expiration(exp)
 				.signWith(key, Jwts.SIG.HS256).compact();
+	}
+
+	// --- Generate Refresh Token ---
+	// --- Generate Refresh Token (No role required) ---
+	public String generateRefreshToken(String username) {
+		return buildToken(username, null, refreshTokenExpiration);
+	}
+
+	private String buildToken(String username, String role, long expiry) {
+		Date now = new Date();
+		Date exp = new Date(now.getTime() + expiry);
+
+		return Jwts.builder().subject(username).claims(role != null ? Map.of("role", role) : Map.of()).issuedAt(now)
+				.expiration(exp).signWith(key, Jwts.SIG.HS256).compact();
 	}
 
 	public Claims validateToken(String token) {
@@ -46,10 +67,20 @@ public class JwtService {
 		return validateToken(token).get("role", String.class);
 	}
 
+	// --- Generate new Access Token using Refresh Token ---
+	public String refreshAccessToken(String refreshToken) {
+		Claims claims = validateToken(refreshToken);
+
+		String username = claims.getSubject();
+		String role = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"))
+				.getRole().name();
+
+		return generateToken(username, role);
+	}
+
 	@PostConstruct
 	public void testKey() {
 		System.out.println("JWT Key Length: " + key.getEncoded().length);
 		System.out.println("JWT Key (Base64): " + java.util.Base64.getEncoder().encodeToString(key.getEncoded()));
 	}
-
 }
